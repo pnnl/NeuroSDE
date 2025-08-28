@@ -54,7 +54,7 @@ stochid/
 Install:
 ```bash
 pip install torch torchdiffeq numpy matplotlib
-
+```
 
 ## Quickstart
 ### 1) Bistable SDE — build dataset + train a drift
