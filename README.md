@@ -1,5 +1,8 @@
 # StochID — UT-based Neural ODE/SDE System ID (Bistable & Van der Pol)
 
+**note code may not run in all places, and abstractions not fully cleaned**
+
+
 Lightweight research code for system identification with **Neural ODE drifts** and the **Unscented Transform (UT)**.  
 Covers both **stochastic** (bistable SDE) and **deterministic** (Van der Pol ODE) settings.
 
