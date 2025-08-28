@@ -53,7 +53,7 @@ stochid/
 
 Install:
 ```bash
-pip install torch torchdiffeq numpy matplotlib
+pip install torch torchdiffeq numpy matplotlib neuromancer
 ```
 
 ## Quickstart
