@@ -161,47 +161,24 @@ whitebox_test_bistable(dl_te, dt=0.01, lam=0.0, sigma=0.1, device="cpu")
 
 ### 3) Learned vs. Whitebox ensemble comparison (bistable)
 ```
-import torch
-import torch.nn as nn
-from stochid.simulators import simulate_vdp_records
-from stochid.datasets import SigmaMeanDatasetVDP, build_loaders
-from stochid.Integrators import StateIntegratorND
+import numpy as np
+from stochid.eval import compare_learned_vs_whitebox_bistable
 
-# --- records ---
-recs = simulate_vdp_records(num_trajectories=400, T=200, dt=0.01, mu_vdp=1.0)
+x0    = 0.0
+dt    = 0.01
+steps = 400
+u_seq = np.zeros(steps, dtype=np.float32)
 
-# --- dataset + loaders ---
-ds = SigmaMeanDatasetVDP(recs, device="cpu")
-dl_tr, dl_va, dl_te, _ = build_loaders(ds, batch_size=128)
+res = compare_learned_vs_whitebox_bistable(
+    integrator=integrator, #note here integrator is nested class for odeint and the block
+    x0=x0, u_seq=u_seq, dt=dt, steps=steps,
+    sigma_val=0.1,         # diffusion for learned rollout
+    lam=0.0, sigma_white=0.1,  # whitebox params
+    particles=32, seed=123, show_plots=True
+)
 
-# --- drift net (x1,x2,u)->[dx1,dx2] ---
-class DriftMLP2D(nn.Module):
-    def __init__(self, hidden=128, layers=3):
-        super().__init__()
-        dims=[3]+[hidden]*layers+[2]
-        mods=[]
-        for i in range(len(dims)-2):
-            mods+=[nn.Linear(dims[i],dims[i+1]), nn.ReLU()]
-        mods+=[nn.Linear(dims[-2],dims[-1])]
-        self.net=nn.Sequential(*mods)
-    def forward(self, xu): return self.net(xu)
+print("RMSE (means):", res["rmse_mean"])
 
-drift = DriftMLP2D()
-integ_vdp = StateIntegratorND(drift_nn=drift, nx=2, nu=1, dt=0.01)
-
-# --- one-step mean training ---
-opt = torch.optim.Adam(integ_vdp.parameters(), lr=1e-3)
-mse = nn.MSELoss()
-
-for epoch in range(10):
-    integ_vdp.train(); loss_sum=0; n=0
-    for b in dl_tr:
-        sp, W, y = b["sigma_points"], b["W_points"], b["mean_f"]
-        yhat = integ_vdp(sp, W)   # [B,2]
-        loss = mse(yhat, y)
-        opt.zero_grad(); loss.backward(); opt.step()
-        loss_sum += loss.item()*y.numel(); n+=y.numel()
-    print(f"epoch {epoch+1:02d} | train MSE {loss_sum/n:.3e}")
 ```
 
 ### 4) Van der Pol (deterministic) — dataset + inference
